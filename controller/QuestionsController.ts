@@ -71,5 +71,28 @@ class QuestionsController {
       })
     });
   }
+  static async DeleteCourse(req, res) {
+    const {courseId, questionId} = req.params
+    await Promise.all(Questions.findOne({ courseId, questions: {
+      questionId
+    } }).then(async (question)=>{
+      var updatedquestion = question?.questions.filter(question=>question.questionId!==questionId)
+      const update = {
+        ...question,
+        questions: [
+          ...updatedquestion
+        ]
+      }
+      await Questions.findOneAndUpdate({courseId}, {
+        $set: update
+    }, {
+        new: true,
+        runValidators: true,
+        upsert: true,
+        returnOriginal: false,
+        returnNewDocument: true
+    }).exec()
+    }))
+  }
 }
 export default QuestionsController;

@@ -1,55 +1,93 @@
-import express from "express";
-import Appointment from "../models/UserCourses";
-import { Request, Response } from "express";
-import bcrypt from "bcryptjs";
+import UserCourses from "../models/UserCourses";
 import jwt from "jsonwebtoken";
-import jwt_decode from "jwt-decode";
-// const key = process.env.SECRET_KEY || "secret"
+const key = process.env.SECRET_KEY || "secret"
 class UserCourseController {
   static async AddCourse(req, res) {
-    // res.send(decode)
-    const { full_name, date, time, reason, phone_number, email } = req.body;
-    const newAppointment = {
-      full_name, date, time, reason, phone_number, email
-    };
-    await Appointment.findOne({ date, time })
-      .then((appointment) => {
-        if (appointment) {
-          console.log(appointment);
-          res.json({ message: "Sorry The selected date and time has been booked" });
+    var decode = jwt.verify(req.headers['authorization'], key)
+    const { courseId, courseName } = req.body;
+    // const newUserCourses = {
+    //   courseId, courseName, userId: decode?.userId,
+    // };
+   decode && decode?.userId && await Promise.all(UserCourses.findOne({ userId: decode?.userId, courses: {
+      courseId,
+      courseName
+    } })
+      .then(async(courses) => {
+        if (courses) {
+          res.json({ message: `${courseName} already exists` });
         }
-        if (!appointment) {
-          // console.log(Appointment)
-          Appointment.create(newAppointment).then(() => {
-            res.json({ data: newAppointment, message: "Booking Successful" });
-          });
+        if (!courses) {
+          await Promise.all(UserCourses.findOne({ userId: decode?.userId}).then(async(course) => {
+            if(!course) {
+              UserCourses.create({
+                userId: decode?.userId,
+                courses: [{courseId, courseName}]
+              })
+            }
+            else {
+              const allCourses = course?.courses
+              const update = {
+                userId: decode?.userId,
+                modified: Date.now,
+                courses: [
+                  ...allCourses,
+                  {courseId, courseName}
+                ]
+              }
+              UserCourses.findOneAndUpdate({userId: decode?.userId}, {
+                $set: update
+            }, {
+                new: true,
+                runValidators: true,
+                upsert: true,
+                returnOriginal: false,
+                returnNewDocument: true
+            }).exec()
+            }
+          }))
         }
       })
       .catch((err) => {
         res.send("error" + err);
-      });
+      }));
   }
   static async GetAllCourses(req, res) {
-    const pageData = Number(req.params.page) * 10
-    const nextPageData = (Number(req.params.page) + 1) * 10
-    await Appointment.find().then(appointment=>{
-      appointment && res.json({message: "All Appointments Retrieved Successfully", data: appointment.slice(pageData, nextPageData), total: appointment.length})
-      !appointment && res.json({message: "Unexpected Error"})
+    var decode = jwt.verify(req.headers['authorization'], key)
+    await UserCourses.find({userId: decode?.userId}).then(courses=>{
+      courses && res.json({message: "All User courses Retrieved Successfully", data: courses, total: courses.length})
+      !courses && res.json({message: "Unexpected Error"})
     })
   }
   static async GetCourse(req, res) {
-    await Appointment.findOne({_id: req.params.id}).then(appointment=>{
-      appointment && res.json({message: "Appointment Retrieved Successfully", data: appointment})
-      !appointment && res.json({message: "No Appointment With that ID"})
+    var decode = jwt.verify(req.headers['authorization'], key)
+    await UserCourses.findOne({userId: decode?.userId}).then(course=>{
+      course && res.json({message: "course Retrieved Successfully", data: course})
+      !course && res.json({message: `No registered course found for ${decode?.fullName}`})
     })
   }
   static async DeleteCourse(req, res) {
-    await Appointment.findOneAndDelete({_id: req.params.id}).then(async ()=>{
-      await Appointment.find().then(Appointment=>{
-        Appointment && res.json({message: "All Appointment Items Retrieved Successfully", data: Appointment})
-      !Appointment && res.json({message: "Unexpected Error"})
-      })
-    })
+    const {courseId} = req.params
+    var decode = jwt.verify(req.headers['authorization'], key)
+    await Promise.all(UserCourses.findOne({userId: decode?.userId, courses:{
+      courseId
+    }}).then(async (course)=>{
+      var updatedCourse = course?.courses.filter(course=>course.courseId!==courseId)
+      const update = {
+        userId: decode?.userId,
+        courses: [
+          ...updatedCourse
+        ]
+      }
+      await UserCourses.findOneAndUpdate({userId: decode?.userId}, {
+        $set: update
+    }, {
+        new: true,
+        runValidators: true,
+        upsert: true,
+        returnOriginal: false,
+        returnNewDocument: true
+    }).exec()
+    }))
   }
 }
 export default UserCourseController;
