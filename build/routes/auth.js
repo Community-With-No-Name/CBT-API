@@ -8,5 +8,7 @@ var router = express_1.default.Router();
 const cors_1 = __importDefault(require("cors"));
 const AuthController_1 = __importDefault(require("../controller/AuthController"));
 router.use((0, cors_1.default)());
-router.post("/", (req, res) => AuthController_1.default.Login(req, res));
+router.get("/", (req, res) => AuthController_1.default.GetUser(req, res));
+router.post("/login", (req, res) => AuthController_1.default.Login(req, res));
+router.post("/register", (req, res) => AuthController_1.default.SignUp(req, res));
 module.exports = router;
