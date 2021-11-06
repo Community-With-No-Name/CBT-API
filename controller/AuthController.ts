@@ -6,7 +6,7 @@ const key = process.env.SECRET_KEY || "secret";
 class AuthController {
   static async Login(req, res) {
     const { email, password } = req.body;
-    console.log(req.body);
+    // console.log(req.body);
     await Users.findOne({email}).then((user) => {
       if (user) {
         if (bcrypt.compareSync(password, user.password)) {
@@ -20,11 +20,11 @@ class AuthController {
           let token = jwt.sign(payload, key);
           res.json(token);
         } else {
-          res.json({ message: "Passwords do not match" });
+          res.json({ error: "Passwords do not match" });
         }
       } else {
         res.json({
-          message: "User does not exist",
+          error: "User does not exist",
         });
       }
     });
@@ -51,7 +51,7 @@ class AuthController {
       }
       else {
         res.json({
-          message: "An account already exists with that email address"
+          error: "An account already exists with that email address"
         })
       }
     })
