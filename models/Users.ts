@@ -1,11 +1,11 @@
 const mongoose = require('mongoose');
 
 const UsersSchema = new mongoose.Schema({
-    fullName: String,
+    full_name: String,
     email: String,
-    faculty: String,
-    department: String,
+    matric: String,
     password: String,
+    status: String,
     image: String,
     modified: {
         type: Date,

@@ -2,6 +2,7 @@ import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import Users from "../models/Users";
+import { HandleResponse } from "../HandleResponse";
 const key = process.env.SECRET_KEY || "secret";
 class AuthController {
   static async Login(req, res) {
@@ -29,36 +30,65 @@ class AuthController {
       }
     });
   }
-  static async SignUp(req, res) {
-    const { fullName, password, email, faculty, department } = req.body;
-    const NewUser = {
-      fullName,
-      password,
-      email,
-      faculty,
-      department,
-    };
-    await Users.findOne({email}).then((user) => {
-      if(!user) {
-        bcrypt.hash(password, 10, (err, hash) => {
-          NewUser.password = hash;
-          const hashedUser = new Users(NewUser)
-          // Customer.create(customerData).then(() => {
-          hashedUser.save().then(() => {
-            res.json({ message: `${fullName}'s Account Created Successfully` });
-          });
-        })
-      }
-      else {
-        res.json({
-          error: "An account already exists with that email address"
-        })
-      }
-    })
+  static async UpdateAccount(req, res) {
+    const { matric } = req.params;
+    const {password} = req.body
+    bcrypt.hash(password, 10, (err, hash) => {
+            Users.findOneAndUpdate({matric}, {
+              $set: {password: hash}
+          }, {
+              new: true,
+              runValidators: true,
+              upsert: true,
+              returnOriginal: false,
+              returnNewDocument: true
+          }).exec()
+          .then((user)=>{
+            HandleResponse(res, 201, "Account Updated Successfully", user)
+          })
+          })
   }
-  static async GetUser(req, res) {
-    var decode = jwt.verify(req.headers['authorization'], key)
-    res.json({user: decode})
+  static async CreateUser(req, res) {
+    const { 
+      email,
+      full_name,
+      matric,
+      image,
+      whatsapp
+     } = req.body;
+    const NewUser = {
+      email,
+      full_name,
+      matric,
+      password: "",
+      status: "Not Activated",
+      image,
+      whatsapp,
+    };
+    await Users.findOne({email, matric})
+      .then((user) => {
+        if (user) {
+          console.log(user);
+          HandleResponse(res, 500, `${matric} exists already`, user)
+        }
+        if (!user) {
+          // console.log(users)
+          Users.create(NewUser).then(() => {
+            HandleResponse(res, 200, `${matric} added to the user list successfully`, NewUser)
+          });
+        }
+      })
+      .catch((err) => {
+        res.send("error" + err);
+      });
+  }
+  static async GetUsers(req, res) {
+    // var decode = jwt.verify(req.headers['authorization'], key)
+    // res.json({user: decode})
+    await Users.find().then(users=>{
+      users && res.json({message: "All users Retrieved Successfully", data: users, total: users.length})
+      !users && res.json({message: "Unexpected Error"})
+    })
   }
 }
 export default AuthController;
