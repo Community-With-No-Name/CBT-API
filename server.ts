@@ -9,7 +9,7 @@ var QuestionsRouter = require('./routes/questions')
 var ResultsRouter = require('./routes/results')
 var UserCoursesRouter = require('./routes/userCourses')
 const PORT = process.env.PORT || 8000;
-const mongoURI = process.env.ATLAS_URI || "mongodb://localhost/CBT"
+const mongoURI = process.env.ATLAS_URI || "mongodb://localhost/TEAM_MANAGEMENT"
  const connection = mongoose.connect(mongoURI,
   {
     useNewUrlParser: true,
@@ -28,7 +28,7 @@ app.use('/api/courses', CoursesRouter);
 app.use('/api/questions', QuestionsRouter);
 app.use('/api/results', ResultsRouter);
 app.use('/api/userCourses', UserCoursesRouter);
-app.get('/', (req, res) => res.send(`BlueForceTech ⚡️[server]: Server is running at https://localhost:${PORT}`));
+app.get('/', (req, res) => res.send(`Team Management ⚡️[server]: Server is running at https://localhost:${PORT}`));
 app.listen(PORT, () => {
   console.log(`⚡️[server]: Server is running at https://localhost:${PORT}`);
 });

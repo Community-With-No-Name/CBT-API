@@ -6,8 +6,9 @@ import bcrypt from "bcryptjs"
 import AuthController from '../controller/AuthController';
 router.use(cors())
 
-router.get("/", (req, res)=> AuthController.GetUser(req, res))
+router.get("/", (req, res)=> AuthController.GetUsers(req, res))
 router.post("/login", (req, res)=> AuthController.Login(req, res))
-router.post("/register", (req, res)=> AuthController.SignUp(req, res))
+router.post("/update_account/:matric", (req, res)=> AuthController.UpdateAccount(req, res))
+router.post("/create_user", (req, res)=> AuthController.CreateUser(req, res))
 
 module.exports = router
